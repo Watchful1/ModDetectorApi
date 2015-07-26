@@ -16,31 +16,37 @@ public class main {
             logger.message("No args, aborting");
             return;
         }
-        int argCounter = 0;
         if(args[0].equals("-h") || args[0].equals("--help")) {
             logger.message("Usage: ModDetector [Options] Folder1 [Folder2]");
             logger.message("This program prints the mods and versions in the given folder.\n" +
-                    "If a second folder is given, a changelog between the two is printed.");
+                    "If a second folder is given, a changelog from Folder2 to Folder1 is printed.");
             logger.message("\n  -v      Verbose logging\n" +
-                    "  -h      Display this help");
+                    "  -h      Display this help\n" +
+                    "  -c      Print to console rather than a file");
             return;
         }
-        if(args[0].equals("-v")) {
-            logger.logLevel = Logger.INFO;
-            argCounter++;
+        boolean onSecondFolder = false;
+        File folder = null;
+        File oldFolder = null;
+        for(String arg : args) {
+            if(arg.equals("-v")) {
+                logger.logLevel = Logger.INFO;
+            } else if(arg.equals("-c")) {
+                logger.consoleOutput = true;
+            } else if(!onSecondFolder) {
+                folder = new File(arg);
+                onSecondFolder = true;
+            } else {
+                oldFolder = new File(arg);
+            }
         }
 
-        File oldFolder = null;
-        if(args.length - argCounter == 2) {
-            oldFolder = new File(args[argCounter]);
-            if(!oldFolder.exists()) {
-                logger.error("Folder does not exist, aborting: " + oldFolder.getPath());
-                return;
-            }
-            argCounter++;
+        if(oldFolder != null && !oldFolder.exists()) {
+            logger.error("Folder does not exist, aborting: " + oldFolder.getPath());
+            return;
         }
-        File folder = new File(args[argCounter]);
-        if(!folder.exists()) {
+
+        if(folder == null || !folder.exists()) {
             logger.error("Folder does not exist, aborting: " + folder.getPath());
             return;
         }
@@ -100,22 +106,23 @@ public class main {
 
             for(Mod mod : addedMods) {
                 String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
-                logger.message("Added: "+name+" ("+mod.version+")");
+                logger.output("Added: " + name + " : " + mod.version);
             }
             for(Mod mod : updatedMods) {
                 String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
-                logger.message("Updated: "+name+" ("+mod.version+")");
+                logger.output("Updated: " + name + " : " + mod.version);
             }
             for(Mod mod : removedMods) {
                 String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
-                logger.message("Removed: "+name);
+                logger.output("Removed: " + name);
             }
 
         } else {
             for (Mod mod : mods) {
-                if (mod.shortName == null) logger.message(mod.mcmodName + " : " + mod.version);
-                else logger.message(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
+                if (mod.shortName == null) logger.output(mod.mcmodName + " : " + mod.version);
+                else logger.output(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
             }
         }
+        logger.flushFile();
     }
 }
