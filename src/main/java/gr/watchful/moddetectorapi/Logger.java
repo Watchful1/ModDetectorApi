@@ -11,12 +11,10 @@ public class Logger {
 
     public int logLevel;
     public boolean consoleOutput;
-    private StringBuilder bldr;
 
     public Logger() {
         logLevel = WARNING;
         consoleOutput = false;
-        bldr = new StringBuilder();
     }
 
     public static void init() {
@@ -47,31 +45,5 @@ public class Logger {
 
     public void message(String message) {
         System.out.println(message);
-    }
-
-    public void output(String message) {
-        if(consoleOutput) {
-            System.out.println(message);
-        } else {
-            bldr.append(message);
-            bldr.append("\n");
-        }
-    }
-
-    public void flushFile() {
-        if(!consoleOutput) {
-            File location = new File("ModList.txt");
-            try{
-                if(location.exists()) location.delete();
-                location.createNewFile();
-
-                FileWriter fstream = new FileWriter(location);
-                BufferedWriter out = new BufferedWriter(fstream);
-                out.write(bldr.toString());
-                out.close();
-            } catch (Exception e){
-                error("Could not write to file");
-            }
-        }
     }
 }
