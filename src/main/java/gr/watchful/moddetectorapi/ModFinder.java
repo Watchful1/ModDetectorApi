@@ -66,6 +66,28 @@ public class ModFinder {
                     mod.modIDs.add(MD5);
                 }
             }
+
+            if(mod.codeVersion.size() != 0) {
+                for(String version : mod.codeVersion) {
+                    if(!version.equals("") && version.matches(".*[0-9].*")) {
+                        if(mod.version == null) mod.version = version;
+                        else if(version.length() > mod.version.length()) mod.version = version;
+                    }
+                }
+            }
+            if(mod.version == null && mod.mcmodVersion != null && !mod.mcmodVersion.equals("")) {
+                mod.version = mod.mcmodVersion;
+            }
+            if(mod.version == null) {
+                String fileName = mod.files.get(0).getName();
+                int firstDash = fileName.indexOf('-');
+                if(firstDash == -1) {
+                    mod.version = fileName;
+                } else {
+                    mod.version = fileName.substring(firstDash+1);
+                }
+
+            }
         }
         if(rawClasses > 0) logger.warn("Raw class files are present in the mods folder\n"+
                 "This is not supported by this tool");
@@ -108,14 +130,17 @@ public class ModFinder {
                     if(itemName.endsWith("info")) {
                         try {
                             JSONArray jsonArray = new JSONArray(responseStrBuilder.toString());
-                            workingMod.version = (String) jsonArray.getJSONObject(0).get("version");
+                            workingMod.mcmodVersion = (String) jsonArray.getJSONObject(0).get("version");
+                            workingMod.dominentModID = (String) jsonArray.getJSONObject(0).get("modid");
+                            workingMod.mcmodName = (String) jsonArray.getJSONObject(0).get("name");
                         } catch (JSONException e) {
                             try {
                                 // Version 2
                                 JSONObject jsonObject = new JSONObject(responseStrBuilder.toString());
                                 JSONArray jsonArray = jsonObject.getJSONArray("modList");
-                                workingMod.version = (String) jsonArray.getJSONObject(0).get("version");
-                                if(workingMod.version.equals("")) workingMod.version = null;
+                                workingMod.mcmodVersion = (String) jsonArray.getJSONObject(0).get("version");
+                                workingMod.dominentModID = (String) jsonArray.getJSONObject(0).get("modid");
+                                workingMod.mcmodName = (String) jsonArray.getJSONObject(0).get("name");
                                 // assuming there's only one mod in mcmod.info. I can't think of an easy way to support multiple mod versions at this point
                             } catch (JSONException e2) {
                                 continue;
@@ -174,6 +199,7 @@ public class ModFinder {
         @Override
         public void visit(int version, int access, String name, String signature,
                           String superName, String[] interfaces) {
+            //logger.info(name);
             if(superName.equals("BaseMod")) {
                 workingMod.addID(name);
             } else if(superName.equals("DummyModContainer") || superName.equals("cpw/mods/fml/common/DummyModContainer")) {
@@ -196,10 +222,8 @@ public class ModFinder {
         public  MethodVisitor visitMethod(int access, String name, String desc,
                                           String signature, String[] exceptions) {
             if (tmp) {
-                //System.out.println("Visiting "+name);
                 return new ModMethodVisitor();
             }
-            //System.out.println("    "+name);
             return null;
         }
     }
@@ -229,7 +253,7 @@ public class ModFinder {
         @Override
         public void visitEnd() {
             if(id != null) workingMod.addID(id);
-            if(version != null && workingMod.version == null) workingMod.version = version;
+            if(version != null) workingMod.codeVersion.add(version);
         }
     }
 
@@ -237,6 +261,7 @@ public class ModFinder {
         String temp;
         String id;
         String version;
+        boolean recent = false;
 
         public ModMethodVisitor() {
             super(Opcodes.ASM4);
@@ -246,20 +271,23 @@ public class ModFinder {
         public void visitFieldInsn(int opc, String owner, String name, String desc) {
             if(name.equals("modId")) {
                 id = temp;
-            } else if(name.equals("version")) {
+            } else if(name.equals("version") && recent) {
                 version = temp;
+            } else {
+                recent = false;
             }
         }
 
         @Override
         public void visitLdcInsn(Object cst) {
             temp = cst.toString();
+            recent = true;
         }
 
         @Override
         public void visitEnd() {
             if(id != null) workingMod.addID(id);
-            if(version != null && workingMod.version == null) workingMod.version = version;
+            if(version != null) workingMod.codeVersion.add(version);
         }
     }
 }

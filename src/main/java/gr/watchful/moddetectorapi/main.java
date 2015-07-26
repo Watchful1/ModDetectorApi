@@ -4,6 +4,8 @@ import sun.rmi.runtime.Log;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 
 public class main {
     public static void main(String[] args) {
@@ -28,6 +30,15 @@ public class main {
             argCounter++;
         }
 
+        File oldFolder = null;
+        if(args.length - argCounter == 2) {
+            oldFolder = new File(args[argCounter]);
+            if(!oldFolder.exists()) {
+                logger.error("Folder does not exist, aborting: " + oldFolder.getPath());
+                return;
+            }
+            argCounter++;
+        }
         File folder = new File(args[argCounter]);
         if(!folder.exists()) {
             logger.error("Folder does not exist, aborting: " + folder.getPath());
@@ -55,8 +66,56 @@ public class main {
         ArrayList<Mod> mods = new ModFinder().discoverMods(folder);
         mods = modRegistry.processMods(mods);
 
-        for(Mod mod : mods) {
-            logger.message(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
+        if(oldFolder != null) {
+            ArrayList<Mod> oldMods = new ModFinder().discoverMods(oldFolder);
+            oldMods = modRegistry.processMods(oldMods);
+
+            HashMap<String, Mod> oldModsHash = new HashMap<>();
+            for(Mod mod : oldMods) {
+                String name = mod.shortName == null ? mod.mcmodName : mod.shortName;
+                oldModsHash.put(name, mod);
+            }
+
+            ArrayList<Mod> addedMods = new ArrayList<>();
+            ArrayList<Mod> updatedMods = new ArrayList<>();
+            ArrayList<Mod> removedMods = new ArrayList<>();
+
+            for(Mod mod : mods) {
+                String name = mod.shortName == null ? mod.mcmodName : mod.shortName;
+                if(oldModsHash.containsKey(name)) {
+                    if(mod.version == null) {
+                        logger.warn("Hit a null version, in theory this should never happen");
+                    } else {
+                        if (!mod.version.equals(oldModsHash.get(name).version)) updatedMods.add(mod);
+                    }
+                    oldModsHash.remove(name);
+                } else {
+                    addedMods.add(mod);
+                }
+            }
+            for(Mod mod : oldModsHash.values()) {
+                removedMods.add(mod);
+            }
+            Collections.sort(removedMods);
+
+            for(Mod mod : addedMods) {
+                String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
+                logger.message("Added: "+name+" ("+mod.version+")");
+            }
+            for(Mod mod : updatedMods) {
+                String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
+                logger.message("Updated: "+name+" ("+mod.version+")");
+            }
+            for(Mod mod : removedMods) {
+                String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
+                logger.message("Removed: "+name);
+            }
+
+        } else {
+            for (Mod mod : mods) {
+                if (mod.shortName == null) logger.message(mod.mcmodName + " : " + mod.version);
+                else logger.message(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
+            }
         }
     }
 }

@@ -39,7 +39,7 @@ public class ModRegistry {
                 continue;
             }
             if(modInfo.modids == null || modInfo.modids.length() == 0) {
-                logger.info("Skipping, no id's: "+modInfo.shortName);
+                logger.info("Skipping, no id's: " + modInfo.shortName);
                 continue;
             }
 
@@ -66,13 +66,15 @@ public class ModRegistry {
 
     public ArrayList<Mod> processMods(ArrayList<Mod> mods) {
         HashMap<String, Mod> hashMods = new HashMap<>();
+        ArrayList<Mod> modsOut = new ArrayList<>();
 
-        ArrayList<String> shortNames;
+        String shortName;
         for(Mod mod : mods) {
-            shortNames = processMod(mod);
-
-            for(String shortName : shortNames) {
-                if(hashMods.containsKey(shortName)) {
+            shortName = processMod(mod);
+            if(shortName == null) {
+                modsOut.add(mod);
+            } else {
+                if (hashMods.containsKey(shortName)) {
                     hashMods.get(shortName).files.addAll(mod.files);
                     hashMods.get(shortName).modIDs.addAll(mod.modIDs);
                 } else {
@@ -83,7 +85,6 @@ public class ModRegistry {
         }
         hashMods.remove("ignore");
 
-        ArrayList<Mod> modsOut = new ArrayList<>();
         for(Mod mod : hashMods.values()) {
             modsOut.add(mod);
         }
@@ -91,23 +92,21 @@ public class ModRegistry {
         return modsOut;
     }
 
-    private ArrayList<String> processMod(Mod mod) {
-        ArrayList<String> shortNames = new ArrayList<>();
-
+    private String processMod(Mod mod) {
         String result;
-        HashSet<String> identifiedShortNames = new HashSet<>();
+        String shortName = null;
         if(mod.modIDs.size() > 0) {
             for(String modID : mod.modIDs) {
                 result = checkID(modID);
-                if(result != null) identifiedShortNames.add(result);
+                if(result != null) {
+                    if(shortName == null) shortName = result;
+                    else if(modID.equals(mod.dominentModID)) shortName = result;
+                }
             }
         } else {
-            logger.warn("Hit a mod without any mod ids. This shouldn't happen: "+mod.files.get(0).getName());
+            logger.warn("Hit a mod without any mod ids. This shouldn't happen: " + mod.files.get(0).getName());
         }
 
-        for(String ID : identifiedShortNames) {
-            shortNames.add(ID);
-        }
-        return shortNames;
+        return shortName;
     }
 }

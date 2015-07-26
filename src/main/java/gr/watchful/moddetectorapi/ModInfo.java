@@ -34,8 +34,9 @@ public class ModInfo {
     }
 
     public void init() {
-        if(shortName == null || shortName.equals("")) Logger.getInstance().warn(
-                "Trying to init a ModInfo with a null shortname, this is bad");
+        //if(shortName == null || shortName.equals("")) Logger.getInstance().warn(
+        //        "Trying to init a ModInfo with a null shortname, this is bad");
+        // TODO suppress this until that bug is fixed in the api
         if(modName == null) modName = "";
         if(modAuthors == null) modAuthors = "";
         if(modLink == null) modLink = "";
