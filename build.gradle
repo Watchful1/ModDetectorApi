@@ -12,3 +12,10 @@ dependencies {
     compile 'org.ow2.asm:asm:5.0.2'
     compile 'com.google.code.gson:gson:2.2.4'
 }
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'gr.watchful.moddetectorapi.main'
+    }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+}
