@@ -28,8 +28,10 @@ public class main {
         File folder = null;
         File oldFolder = null;
         for(String arg : args) {
-            if(arg.equals("-v")) {
+            if(arg.equals("-v") || arg.equals("--verbose")) {
                 logger.logLevel = Logger.INFO;
+            } else if(arg.equals("-h") || arg.equals("--help")) {
+                logger.message("do not use " + arg + " with other arguments, ignoring");
             } else if(!onSecondFolder) {
                 folder = new File(arg);
                 onSecondFolder = true;
@@ -38,13 +40,19 @@ public class main {
             }
         }
 
-        if(oldFolder != null && !oldFolder.exists()) {
-            logger.error("Folder does not exist, aborting: " + oldFolder.getPath());
+        if(folder == null) {
+            logger.error("No folder given, aborting");
             return;
         }
 
-        if(folder == null || !folder.exists()) {
+        if(!folder.exists())
+        {
             logger.error("Folder does not exist, aborting: " + folder.getPath());
+            return;
+        }
+
+        if(oldFolder != null && !oldFolder.exists()) {
+            logger.error("Folder does not exist, aborting: " + oldFolder.getPath());
             return;
         }
 
