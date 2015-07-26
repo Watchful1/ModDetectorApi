@@ -1,0 +1,14 @@
+group 'ModDetectorApi'
+version '1.0.0'
+
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.json:json:20090211'
+    compile 'org.ow2.asm:asm:5.0.2'
+    compile 'com.google.code.gson:gson:2.2.4'
+}
