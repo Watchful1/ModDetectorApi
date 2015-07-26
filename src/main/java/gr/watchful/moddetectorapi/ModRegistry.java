@@ -8,10 +8,14 @@ import java.util.HashSet;
 public class ModRegistry {
     private static volatile ModRegistry instance = null;
 
+    Logger logger;
+
     private HashMap<String, String> shortNameMappings;
     private HashMap<String, ModInfo> modInfoMappings;
 
     public ModRegistry() {
+        logger = Logger.getInstance();
+
         shortNameMappings = new HashMap<>();
         modInfoMappings = new HashMap<>();
     }
@@ -27,15 +31,15 @@ public class ModRegistry {
     }
 
     public void loadMappings(ModInfo[] modInfos) {
-        System.out.println("Loading " + modInfos.length + " mods");
+        logger.info("Loading " + modInfos.length + " mods from api");
 
         for(ModInfo modInfo : modInfos) {
             if(modInfo.shortName == null) {
-                System.out.println("Skipping, no shortname");
+                logger.info("Skipping, no shortname");
                 continue;
             }
             if(modInfo.modids == null || modInfo.modids.length() == 0) {
-                System.out.println("Skipping, no id's: "+modInfo.shortName);
+                logger.info("Skipping, no id's: "+modInfo.shortName);
                 continue;
             }
 
@@ -77,6 +81,7 @@ public class ModRegistry {
                 }
             }
         }
+        hashMods.remove("ignore");
 
         ArrayList<Mod> modsOut = new ArrayList<>();
         for(Mod mod : hashMods.values()) {
@@ -97,7 +102,7 @@ public class ModRegistry {
                 if(result != null) identifiedShortNames.add(result);
             }
         } else {
-            System.out.println("Hit a mod without any mod ids. This shouldn't happen: "+mod.files.get(0).getName());
+            logger.warn("Hit a mod without any mod ids. This shouldn't happen: "+mod.files.get(0).getName());
         }
 
         for(String ID : identifiedShortNames) {

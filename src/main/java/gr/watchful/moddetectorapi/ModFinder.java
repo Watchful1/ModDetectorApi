@@ -1,5 +1,6 @@
 package gr.watchful.moddetectorapi;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.objectweb.asm.*;
@@ -14,9 +15,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class ModFinder {
+    Logger logger;
+
     // We need a central place to add ID's for when we can't return what we want
     private Mod workingMod;
     private int rawClasses;
+
+    public ModFinder() {
+        logger = Logger.getInstance();
+    }
 
     public ArrayList<Mod> discoverMods(File folder) {
         rawClasses = 0;
@@ -53,13 +60,14 @@ public class ModFinder {
             if (mod.modIDs.size() == 0) {
                 String MD5 = Utils.getMD5(mod.files.get(0));
                 if (MD5 == null) {
+                    logger.warn("Couldn't get MD5 for "+mod.files.get(0).getName());
                     continue;
                 } else {
-                    workingMod.modIDs.add(MD5);
+                    mod.modIDs.add(MD5);
                 }
             }
         }
-        if(rawClasses > 0) System.out.println("Raw class files are present in the mods folder\n"+
+        if(rawClasses > 0) logger.warn("Raw class files are present in the mods folder\n"+
                 "This is not supported by this tool");
         return mods;
     }
@@ -80,24 +88,43 @@ public class ModFinder {
             boolean hasClassFiles = false;
             while(files.hasMoreElements()) {
                 ZipEntry item = files.nextElement();
-                if(item.getName().equals("litemod.json")) {
+                String itemName = item.getName();
+                if(itemName.equals("litemod.json") || itemName.endsWith("info")) {
                     BufferedReader streamReader = new BufferedReader(new InputStreamReader(file.getInputStream(item), "UTF-8"));
                     StringBuilder responseStrBuilder = new StringBuilder();
 
                     String inputStr;
                     while ((inputStr = streamReader.readLine()) != null)
                         responseStrBuilder.append(inputStr);
-                    JSONObject litemodJSON;
-                    try {
-                        litemodJSON = new JSONObject(responseStrBuilder.toString());
-                        String name = (String) litemodJSON.get("name");
-                        workingMod.addID(name);
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                        continue;
+                    if(itemName.equals("litemod.json")) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(responseStrBuilder.toString());
+                            String name = (String) jsonObject.get("name");
+                            workingMod.addID(name);
+                        } catch (JSONException e) {
+                            continue;
+                        }
+                    }
+                    if(itemName.endsWith("info")) {
+                        try {
+                            JSONArray jsonArray = new JSONArray(responseStrBuilder.toString());
+                            workingMod.version = (String) jsonArray.getJSONObject(0).get("version");
+                        } catch (JSONException e) {
+                            try {
+                                // Version 2
+                                JSONObject jsonObject = new JSONObject(responseStrBuilder.toString());
+                                JSONArray jsonArray = jsonObject.getJSONArray("modList");
+                                workingMod.version = (String) jsonArray.getJSONObject(0).get("version");
+                                if(workingMod.version.equals("")) workingMod.version = null;
+                                // assuming there's only one mod in mcmod.info. I can't think of an easy way to support multiple mod versions at this point
+                            } catch (JSONException e2) {
+                                continue;
+                            }
+                            continue;
+                        }
                     }
                 }
-                if(item.getName().equals("META-INF/MANIFEST.MF")) {
+                if(itemName.equals("META-INF/MANIFEST.MF")) {
                     BufferedReader streamReader = new BufferedReader(new InputStreamReader(file.getInputStream(item), "UTF-8"));
 
                     String inputStr;
@@ -109,7 +136,7 @@ public class ModFinder {
                         }
                     }
                 }
-                if(item.isDirectory() || !item.getName().endsWith("class")) continue;
+                if(item.isDirectory() || !itemName.endsWith("class")) continue;
                 hasClassFiles = true;
 
                 ClassReader reader;
@@ -202,7 +229,7 @@ public class ModFinder {
         @Override
         public void visitEnd() {
             if(id != null) workingMod.addID(id);
-            if(version != null) workingMod.version = version;
+            if(version != null && workingMod.version == null) workingMod.version = version;
         }
     }
 
@@ -232,7 +259,7 @@ public class ModFinder {
         @Override
         public void visitEnd() {
             if(id != null) workingMod.addID(id);
-            if(version != null) workingMod.version = version;
+            if(version != null && workingMod.version == null) workingMod.version = version;
         }
     }
 }

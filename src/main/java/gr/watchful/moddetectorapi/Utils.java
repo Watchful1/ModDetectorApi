@@ -35,7 +35,7 @@ public class Utils {
 
             return convertByteArrayToHexString(hashedBytes);
         } catch (NoSuchAlgorithmException | IOException ex) {
-            System.out.println("Couldn't generate hash");
+            Logger.getInstance().warn("Couldn't generate hash");
             return null;
         }
     }
@@ -54,14 +54,14 @@ public class Utils {
         try {
             website = new URL(url);
         } catch (MalformedURLException e) {
-            System.out.println("Couldn't connect to "+url);
+            Logger.getInstance().warn("Couldn't connect to " + url);
             return null;
         }
         URLConnection connection = null;
         try {
             connection = website.openConnection();
         } catch (IOException e) {
-            System.out.println("Couldn't connect to " + url);
+            Logger.getInstance().warn("Couldn't connect to " + url);
             return null;
         }
         BufferedReader in = null;
@@ -69,7 +69,7 @@ public class Utils {
             in = new BufferedReader(
                     new InputStreamReader(connection.getInputStream()));
         } catch (IOException e) {
-            System.out.println("Couldn't read " + url);
+            Logger.getInstance().warn("Couldn't read " + url);
             return null;
         }
 
@@ -80,14 +80,14 @@ public class Utils {
             while ((inputLine = in.readLine()) != null)
                 response.append(inputLine);
         } catch (IOException e) {
-            System.out.println("Trouble reading " + url);
+            Logger.getInstance().warn("Trouble reading " + url);
             return null;
         }
 
         try {
             in.close();
         } catch (IOException e) {
-            System.out.println("Couldn't close connection to " + url);
+            Logger.getInstance().warn("Couldn't close connection to " + url);
         }
 
         return response.toString();
@@ -99,7 +99,7 @@ public class Utils {
         try {
             tempObject = gson.fromJson(JSON, object.getClass());
         } catch (JsonSyntaxException excp) {
-            System.out.println("returning null");
+            Logger.getInstance().warn("Json parser returning null");
             return null;
         }
         return tempObject;

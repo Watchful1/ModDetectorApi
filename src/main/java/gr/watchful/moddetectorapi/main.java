@@ -1,25 +1,36 @@
 package gr.watchful.moddetectorapi;
 
+import sun.rmi.runtime.Log;
+
 import java.io.File;
 import java.util.ArrayList;
 
 public class main {
     public static void main(String[] args) {
+        Logger.init();
+        Logger logger = Logger.getInstance();
+
         if(args.length == 0) {
-            System.out.println("No args, aborting");
+            logger.message("No args, aborting");
             return;
         }
+        int argCounter = 0;
         if(args[0].equals("-h") || args[0].equals("--help")) {
-            System.out.println("Usage: ModDetector [Options] Folder1 [Folder2]");
-            System.out.println("This program prints the mods and versions in the given folder.\n" +
-                               "If a second folder is given, a changelog between the two is printed.");
-            System.out.println("\n  -v      Verbose logging\n" +
-                                 "  -h      Display this help");
+            logger.message("Usage: ModDetector [Options] Folder1 [Folder2]");
+            logger.message("This program prints the mods and versions in the given folder.\n" +
+                    "If a second folder is given, a changelog between the two is printed.");
+            logger.message("\n  -v      Verbose logging\n" +
+                    "  -h      Display this help");
             return;
         }
-        File folder = new File(args[0]);
+        if(args[0].equals("-v")) {
+            logger.logLevel = Logger.INFO;
+            argCounter++;
+        }
+
+        File folder = new File(args[argCounter]);
         if(!folder.exists()) {
-            System.out.println("Folder does not exist, aborting: "+folder.getPath());
+            logger.error("Folder does not exist, aborting: " + folder.getPath());
             return;
         }
 
@@ -28,7 +39,7 @@ public class main {
 
         String json = Utils.downloadToString(Statics.jsonUrl);
         if(json == null) {
-            System.out.println("Could not download json, aborting");
+            logger.error("Could not download json, aborting");
             return;
         }
 
@@ -36,7 +47,7 @@ public class main {
         try {
             modInfos = (ModInfo[]) Utils.getObject(json, new ModInfo[1]);
         } catch (Exception e) {
-            System.out.println("Unable to parse json, aborting");
+            logger.error("Unable to parse json, aborting");
             return;
         }
         modRegistry.loadMappings(modInfos);
@@ -45,7 +56,7 @@ public class main {
         mods = modRegistry.processMods(mods);
 
         for(Mod mod : mods) {
-            System.out.println(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
+            logger.message(modRegistry.getInfo(mod.shortName).modName + " : " + mod.version);
         }
     }
 }
