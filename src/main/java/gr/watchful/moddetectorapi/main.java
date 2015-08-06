@@ -1,7 +1,5 @@
 package gr.watchful.moddetectorapi;
 
-import sun.rmi.runtime.Log;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,7 +86,7 @@ public class main {
             }
 
             ArrayList<Mod> addedMods = new ArrayList<>();
-            ArrayList<Mod> updatedMods = new ArrayList<>();
+            ArrayList<Mod[]> updatedMods = new ArrayList<>();
             ArrayList<Mod> removedMods = new ArrayList<>();
 
             for(Mod mod : mods) {
@@ -97,7 +95,7 @@ public class main {
                     if(mod.version == null) {
                         logger.warn("Hit a null version, in theory this should never happen");
                     } else {
-                        if (!mod.version.equals(oldModsHash.get(name).version)) updatedMods.add(mod);
+                        if (!mod.version.equals(oldModsHash.get(name).version)) updatedMods.add(new Mod[]{oldModsHash.get(name),mod});
                     }
                     oldModsHash.remove(name);
                 } else {
@@ -113,9 +111,9 @@ public class main {
                 String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
                 logger.message("Added: " + name + " : " + mod.version);
             }
-            for(Mod mod : updatedMods) {
-                String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
-                logger.message("Updated: " + name + " : " + mod.version);
+            for(Mod[] modPair : updatedMods) {
+                String name = modPair[1].shortName == null ? modPair[1].mcmodName : modRegistry.getInfo(modPair[1].shortName).modName;
+                logger.message("Updated: " + name + " : " + modPair[0].version + " - " + modPair[1].version);
             }
             for(Mod mod : removedMods) {
                 String name = mod.shortName == null ? mod.mcmodName : modRegistry.getInfo(mod.shortName).modName;
