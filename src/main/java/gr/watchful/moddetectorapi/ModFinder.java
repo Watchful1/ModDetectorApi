@@ -99,7 +99,7 @@ public class ModFinder {
 
         String ext = Utils.getFileExtension(modArchive);
 
-        if(ext.equals("jar") || ext.equals("zip") || ext.equals("litemod") || ext.equals("disabled")) {
+        if(ext!= null && (ext.equals("jar") || ext.equals("zip") || ext.equals("litemod") || ext.equals("disabled"))) {
             ZipFile file;
             try {
                 file = new ZipFile(modArchive);
@@ -182,7 +182,7 @@ public class ModFinder {
             } else {
                 return null;
             }
-        } else if(ext.equals("class")) {
+        } else if(ext != null && ext.equals("class")) {
             rawClasses++;
         }
         return null;
