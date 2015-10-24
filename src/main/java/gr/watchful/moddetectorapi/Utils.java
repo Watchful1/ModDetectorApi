@@ -64,6 +64,7 @@ public class Utils {
             Logger.getInstance().warn("Couldn't connect to " + url);
             return null;
         }
+        connection.setRequestProperty("User-Agent", "ModDetector");
         BufferedReader in = null;
         try {
             in = new BufferedReader(
