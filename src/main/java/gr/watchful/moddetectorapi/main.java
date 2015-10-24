@@ -20,6 +20,10 @@ public class main {
                     "If a second folder is given, a changelog from Folder2 to Folder1 is printed.");
             logger.message("\n  -v      Verbose logging\n" +
                     "  -h      Display this help");
+            logger.message("\n\n");
+            logger.message("Disclaimer: Version detection depends on the version set in the mod.\n" +
+                    "If the author does not update the field, this tool will not detect a change\n" +
+                    "even if the file name is different");
             return;
         }
         boolean onSecondFolder = false;
